@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:16
+    env_file: .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -9,6 +10,11 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   web:
     build: .
@@ -18,7 +24,9 @@ services:
     volumes:
       - ./src:/app/src
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 volumes:
   pgdata:
