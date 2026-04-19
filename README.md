@@ -1,5 +1,19 @@
 # Service Desk API
 
+## Portfolio Role
+
+This repository is a stateful production-style API workload for the platform portfolio.
+
+Use it when the review should focus on:
+
+- role-aware API behavior and workflow constraints
+- SLA-oriented ticket lifecycle
+- audit trail, reporting, and operational endpoints
+- Docker and CI packaging for a realistic workload
+- an application that can be deployed under the larger Kubernetes and platform labs
+
+In the overall portfolio this project is a workload companion, not the primary platform flagship. It shows the kind of service a platform needs to run, expose, observe, and recover.
+
 Небольшой, но собранный service desk на Django REST Framework. Пользователь создает тикет, support берет его в работу, API следит за ролями, SLA и допустимыми переходами статусов, а важные изменения попадают в аудит.
 
 Это API вокруг реального workflow: правила процесса живут в коде явно, operational-метрики доступны через API, а проект удобно поднимать и проверять локально.
