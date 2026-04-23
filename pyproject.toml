@@ -2,6 +2,7 @@
 line-length = 100
 target-version = "py312"
 src = ["src"]
+extend-include = ["tools/*.py"]
 extend-exclude = ["src/**/migrations/*.py"]
 
 [tool.ruff.lint]

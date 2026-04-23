@@ -58,6 +58,8 @@ class Ticket(models.Model):
     sla_deadline_at = models.DateTimeField(null=True, blank=True, db_index=True)
     first_response_at = models.DateTimeField(null=True, blank=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
+    notification_stub_sent_at = models.DateTimeField(null=True, blank=True)
+    notification_stub_action = models.CharField(max_length=40, blank=True, default="")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

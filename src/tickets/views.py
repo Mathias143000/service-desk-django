@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import csv
+import logging
 
+from django.conf import settings
 from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
@@ -10,6 +12,8 @@ from rest_framework import filters, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+
+from config.metrics import record_ticket_event
 
 from .audit import log_ticket_created, log_ticket_updated, snapshot_ticket
 from .filters import TicketFilter
@@ -25,6 +29,9 @@ from .serializers import (
     UserTicketUpdateSerializer,
 )
 from .sla import apply_sla_on_create, apply_sla_on_update
+from .tasks import send_ticket_notification_stub
+
+logger = logging.getLogger(__name__)
 
 
 class TicketViewSet(viewsets.ModelViewSet):
@@ -60,6 +67,8 @@ class TicketViewSet(viewsets.ModelViewSet):
         )
         ticket.save(update_fields=updated_fields)
         log_ticket_created(actor=self.request.user, ticket=ticket)
+        record_ticket_event("created")
+        self._schedule_notification(ticket=ticket, action="created")
 
     @transaction.atomic
     def perform_update(self, serializer):
@@ -81,6 +90,22 @@ class TicketViewSet(viewsets.ModelViewSet):
             updated.save(update_fields=updated_fields)
         after = snapshot_ticket(updated)
         log_ticket_updated(actor=user, ticket=updated, before=before, after=after)
+        record_ticket_event("updated")
+        self._schedule_notification(ticket=updated, action="updated")
+
+    def _schedule_notification(self, *, ticket: Ticket, action: str) -> None:
+        if not getattr(settings, "ASYNC_TASKS_ENABLED", False):
+            return
+
+        request_id = getattr(self.request, "request_id", None)
+
+        def dispatch() -> None:
+            try:
+                send_ticket_notification_stub.delay(ticket.id, action, request_id=request_id)
+            except Exception:
+                logger.exception("Failed to enqueue notification stub for ticket %s", ticket.id)
+
+        transaction.on_commit(dispatch)
 
     @action(detail=True, methods=["get"], url_path="audit-log")
     def audit_log(self, request, pk=None):

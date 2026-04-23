@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: service-desk
+    orgId: 1
+    folder: Service Desk
+    type: file
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards

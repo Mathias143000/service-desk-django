@@ -1,0 +1,34 @@
+groups:
+  - name: service-desk-platform
+    rules:
+      - alert: ServiceDeskApiDown
+        expr: up{job="api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service Desk API is down"
+
+      - alert: ServiceDeskAuthFailuresDetected
+        expr: increase(service_desk_http_requests_total{path="/api/auth/token/",status="401"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: info
+        annotations:
+          summary: "Failed login attempts detected on Service Desk API"
+
+      - alert: ServiceDeskRedisUnavailable
+        expr: service_desk_dependency_up{dependency="redis"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis dependency is unavailable"
+
+      - alert: ServiceDeskOverdueTicketsDetected
+        expr: service_desk_overdue_tickets > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Overdue tickets are present in the queue"

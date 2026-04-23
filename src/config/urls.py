@@ -3,11 +3,15 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .views import HealthCheckView
+from .views import HealthCheckView, LiveView, MetricsView, ReadyView, RuntimeStatusView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/health/", HealthCheckView.as_view(), name="health"),
+    path("api/ready/", ReadyView.as_view(), name="ready"),
+    path("api/live/", LiveView.as_view(), name="live"),
+    path("api/metrics/", MetricsView.as_view(), name="metrics"),
+    path("api/runtime/", RuntimeStatusView.as_view(), name="runtime"),
 
     # API
     path("api/", include("tickets.urls")),
