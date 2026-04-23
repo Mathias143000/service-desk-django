@@ -57,6 +57,17 @@ def wait_for(predicate, *, timeout: int, step: float, description: str):
     raise RuntimeError(f"Timed out waiting for {description}")
 
 
+def wait_for_request(call, *, timeout: int, step: float, description: str) -> None:
+    def ready():
+        try:
+            call()
+            return True
+        except Exception:
+            return None
+
+    wait_for(ready, timeout=timeout, step=step, description=description)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:18220")
@@ -154,9 +165,24 @@ def main() -> None:
     if "service_desk_http_requests_total" not in metrics_text:
         raise RuntimeError("Metrics endpoint is missing service_desk_http_requests_total")
 
-    request_ok(f"{args.prometheus_url.rstrip('/')}/-/ready")
-    request_ok(f"{args.alertmanager_url.rstrip('/')}/-/ready")
-    request_json(f"{args.grafana_url.rstrip('/')}/api/health")
+    wait_for_request(
+        lambda: request_ok(f"{args.prometheus_url.rstrip('/')}/-/ready"),
+        timeout=60,
+        step=2,
+        description="Prometheus readiness",
+    )
+    wait_for_request(
+        lambda: request_ok(f"{args.alertmanager_url.rstrip('/')}/-/ready"),
+        timeout=60,
+        step=2,
+        description="Alertmanager readiness",
+    )
+    wait_for_request(
+        lambda: request_json(f"{args.grafana_url.rstrip('/')}/api/health"),
+        timeout=90,
+        step=3,
+        description="Grafana health",
+    )
 
     try:
         traces = request_json(f"{args.tempo_url.rstrip('/')}/api/search?limit=5")
