@@ -20,6 +20,7 @@ python src\manage.py check
 python src\manage.py test
 docker compose config
 python tools\smoke_check.py --seed-demo-data
+python tools\smoke_check.py --seed-demo-data --require-traces
 ```
 
 The hardening check writes a local report to:

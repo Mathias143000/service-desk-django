@@ -64,6 +64,7 @@ def main() -> None:
     parser.add_argument("--alertmanager-url", default="http://127.0.0.1:19223")
     parser.add_argument("--grafana-url", default="http://127.0.0.1:13180")
     parser.add_argument("--tempo-url", default="http://127.0.0.1:13241")
+    parser.add_argument("--require-traces", action="store_true")
     parser.add_argument("--support-username", default="support")
     parser.add_argument("--support-password", default="pass12345")
     parser.add_argument("--seed-demo-data", action="store_true")
@@ -157,9 +158,18 @@ def main() -> None:
     request_ok(f"{args.alertmanager_url.rstrip('/')}/-/ready")
     request_json(f"{args.grafana_url.rstrip('/')}/api/health")
 
-    traces = request_json(f"{args.tempo_url.rstrip('/')}/api/search?limit=5")
+    try:
+        traces = request_json(f"{args.tempo_url.rstrip('/')}/api/search?limit=5")
+    except Exception:
+        if args.require_traces:
+            raise
+        traces = {}
+
     if not traces.get("traces"):
-        raise RuntimeError("Tempo search did not return any traces")
+        message = "Tempo search did not return traces yet"
+        if args.require_traces:
+            raise RuntimeError(message)
+        print(f"warning: {message}", flush=True)
 
     print(json.dumps({"status": "ok", "ticket_id": ticket_id}, ensure_ascii=True))
 
